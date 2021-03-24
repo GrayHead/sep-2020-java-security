@@ -1,46 +1,36 @@
 package com.example.security.controllers;
 
+import com.example.security.dao.ClientDAO;
+import com.example.security.models.Client;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
 
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.security.Principal;
-import java.security.Security;
-import java.util.Arrays;
 import java.util.List;
 
-@RestController
+@RestController()
 public class MainController {
 
+    private PasswordEncoder passwordEncoder;
+    private ClientDAO clientDAO;
+
+
+    public MainController(PasswordEncoder passwordEncoder, ClientDAO clientDAO) {
+        this.passwordEncoder = passwordEncoder;
+        this.clientDAO = clientDAO;
+    }
+
+    @PostMapping("/signUp")
+    public void singUp(@RequestBody Client client) {
+        System.out.println(client);
+        String pass = client.getPass();
+        String encode = passwordEncoder.encode(pass);
+        client.setPass(encode);
+        clientDAO.save(client);
+    }
+
     @GetMapping("/")
-    public String home(Principal principal) {
-//        System.out.println(principal);
-//        System.out.println(SecurityContextHolder.getContext().getAuthentication());
-//        SecurityContextHolder
-//                .getContext()
-//                .setAuthentication(
-//                        new UsernamePasswordAuthenticationToken("asd", "asd")
-//                );
+    public List<Client> home() {
 
-
-        return "home";
-    }
-
-
-    @GetMapping("/admin/test")
-    public List<String> adminTest() {
-        return Arrays.asList("kokos", "abrikos");
-    }
-
-    @GetMapping("/user/test")
-    public List<String> userTest() {
-        return Arrays.asList("milk", "shake");
-    }
-
-    @GetMapping("/wide")
-    public String wide() {
-        return "wide url";
+        return clientDAO.findAll();
     }
 }
