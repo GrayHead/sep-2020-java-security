@@ -1,65 +1,79 @@
 package com.example.security.configs;
 
-import com.example.security.dao.AuthTokenDAO;
-import com.example.security.dto.UserDTO;
+import com.example.security.dao.UserDAO;
 import com.example.security.models.AuthToken;
+import com.example.security.models.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import lombok.SneakyThrows;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
-public class LoginFilter extends AbstractAuthenticationProcessingFilter {
+public class LoginFilter extends UsernamePasswordAuthenticationFilter {
+    private UserDAO userDAO;
 
-    private AuthTokenDAO authTokenDAO;
-
-    public LoginFilter(String url,
-                       AuthTokenDAO authTokenDAO,
-                       AuthenticationManager authenticationManager
-    ) {
-        super(new AntPathRequestMatcher(url));
+    public LoginFilter(String url, AuthenticationManager authenticationManager, UserDAO userDAO) {
+        setFilterProcessesUrl(url);
         setAuthenticationManager(authenticationManager);
-        this.authTokenDAO = authTokenDAO;
+        this.userDAO = userDAO;
 
     }
 
-    @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
 
-        ServletInputStream requestBody = request.getInputStream(); // {"username" : "asd","password":"asd"}
-        UserDTO userDTO = new ObjectMapper().readValue(requestBody, UserDTO.class);
-        System.out.println(userDTO);
-        return getAuthenticationManager().authenticate(
-                new UsernamePasswordAuthenticationToken(userDTO.getUsername(), userDTO.getPassword())
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+        User user = null;
+        try {
+            user = new ObjectMapper().readValue(request.getInputStream(), User.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println(user);
+        Authentication authenticate = getAuthenticationManager().authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        user.getUsername(),
+                        user.getPassword())
         );
+        System.out.println(authenticate);
+        return authenticate;
     }
 
     @Override
-    protected void successfulAuthentication(HttpServletRequest request,
-                                            HttpServletResponse response,
-                                            FilterChain chain,
-                                            Authentication authResult) throws IOException, ServletException {
-        String jwtoken = Jwts.builder()
-                .setSubject(authResult.getName()) // asd
-                .signWith(SignatureAlgorithm.HS512, "yes".getBytes()) // asfdyasrdqr6werqwyyfyatfd -> asd (yes)
-//                .setExpiration(new Date(System.currentTimeMillis() + 200000))
+    protected void successfulAuthentication(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain chain,
+            Authentication authResult
+    ) throws IOException, ServletException {
+
+        String token = Jwts.builder()
+                .setSubject(authResult.getName())
+                .signWith(SignatureAlgorithm.HS512, "okten".getBytes())
                 .compact();
 
-        authTokenDAO.save(new AuthToken(jwtoken));
-        response.addHeader("Authorization", "Bearer " + jwtoken);
+
+        User user = userDAO.findUserByUsername(authResult.getName());
+        AuthToken authToken = new AuthToken();
+        authToken.setToken(token);
+        authToken.setUser(user);
+        user.getAuthTokens().add(authToken);
+        userDAO.save(user);
+        response.addHeader("Authorization", "Bearer " + token);
         chain.doFilter(request, response);
 
 
     }
+
 }
