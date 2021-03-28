@@ -28,6 +28,7 @@ public class User implements UserDetails {
     private List<Role> roles = Arrays.asList(Role.ROLE_USER);
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "user")
     private Set<AuthToken> authTokens = new HashSet<>();
+    private boolean isEnabled = false;
     /**/
 
     @Override
@@ -52,9 +53,12 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return isEnabled;
     }
 
+    public void setEnabled(boolean enabled) {
+        isEnabled = enabled;
+    }
 
     @Override
     public String toString() {
