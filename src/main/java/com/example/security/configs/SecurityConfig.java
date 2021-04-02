@@ -27,8 +27,8 @@ import java.util.Arrays;
 @AllArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Qualifier("udsi") // null
-    private UserDetailsService userDetailsService; // null
+    @Qualifier("udsi")
+    private UserDetailsService userDetailsService;
     private UserDAO userDAO;
     private AuthTokenDAO authTokenDAO;
 
@@ -79,8 +79,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/", "/email/**", "/activate/**").permitAll()
+                .antMatchers("/", "/email", "/activate/**").permitAll()
                 .antMatchers(HttpMethod.POST, "/save").permitAll()
+//                .regexMatchers(HttpMethod.POST, "[/adsjgajdshg]")
                 .antMatchers(HttpMethod.POST, "/login").permitAll()
                 .antMatchers("/test").hasRole("USER")
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -91,5 +92,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     }
 }
+
+// login
+//allrf
+//userpasswafil
 
 

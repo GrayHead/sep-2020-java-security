@@ -21,26 +21,27 @@ public class AllRequestsFilter extends GenericFilter {
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+    public void doFilter(ServletRequest request, ServletResponse response,
+                         FilterChain filterChain) throws IOException, ServletException {
 
         Authentication authentication = null;
 
         HttpServletRequest servletRequest = (HttpServletRequest) request;
         String authorizationToken = servletRequest.getHeader("Authorization");
-        if (authorizationToken != null && authorizationToken.startsWith("Bearer ")) {
-            String token = authorizationToken.replace("Bearer ", "");
-            String tokenData = Jwts.parser()
-                    .setSigningKey("okten".getBytes())
-                    .parseClaimsJws(token)
-                    .getBody()
-                    .getSubject();
+        if (authorizationToken != null && authorizationToken.startsWith("Bearer ")) { //
+            String token = authorizationToken.replace("Bearer ", "");// sayausgajagdhgs username password
+//            String tokenData = Jwts.parser()
+//                    .setSigningKey("okten".getBytes())
+//                    .parseClaimsJws(token)
+//                    .getBody()
+//                    .getSubject();
+
             AuthToken authToken = authTokenDAO.findByToken(token);
             User user = authToken.getUser();
             System.out.println(user + "arf doFilter");
             if (user != null) {
                 authentication = new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword(), user.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-
             }
 
         }
